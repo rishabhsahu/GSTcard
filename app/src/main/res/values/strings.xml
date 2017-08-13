@@ -14,9 +14,13 @@
     <string name="slide_3_title">Great Discounts</string>
     <string name="slide_3_desc">Best discounts on every single service we offer!</string>
 
-    <string name="slide_4_title">Your Profile</string>
+    <string name="slide_4_title">Company Profile</string>
     <string name="slide_4_desc"></string>
 
     <string name="play_again_desc">To see the welcome slider again, goto Settings -> apps -> welcome slider -> clear data</string>
     <string name="play_again">Play Again</string>
+    <string name="add_details">Add Details</string>
+    <string name="get_sms_read_and_receive_permission">App need to read and receive sms permission</string>
+    <string name="default_read_contact_permission">App need to have contact permission</string>
+    <string name="user_profile">User Profile</string>
 </resources>

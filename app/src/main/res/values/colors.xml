@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimary">@color/blue</color>
     <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorAccent">#FFF</color>
+
+    <color name="blue">#3395ff</color>
 
     <!-- Screens background color-->
-    <color name="bg_screen1">#3395ff</color>
-    <color name="bg_screen2">#3395ff</color>
-    <color name="bg_screen3">#3395ff</color>
-    <color name="bg_screen4">#3395ff</color>
+    <color name="bg_screen1">@color/blue</color>
+    <color name="bg_screen2">@color/blue</color>
+    <color name="bg_screen3">@color/blue</color>
+    <color name="bg_screen4">@color/blue</color>
 
     <!-- dots inactive colors -->
     <color name="dot_dark_screen1">#2278d4</color>

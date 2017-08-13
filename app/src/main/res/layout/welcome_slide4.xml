@@ -30,22 +30,24 @@
             android:paddingBottom="@dimen/desc_padding"/>
 
         <EditText
+            android:id="@+id/et_company"
             android:layout_width="250dp"
             android:layout_height="50dp"
             android:layout_marginTop="20dp"
             android:layout_weight="0.68"
             android:backgroundTint="@android:color/white"
-            android:textColorHint="@drawable/selector"
             android:hint="Company Name"
             android:paddingLeft="20dp"
             android:paddingRight="20dp"
             android:textAlignment="center"
             android:textColor="@android:color/white"
-            android:textAllCaps="true"
+            android:inputType="textCapCharacters"
+            android:textColorHint="@drawable/selector"
             android:textSize="@dimen/slide_desc" />
 
 
         <EditText
+            android:id="@+id/et_gstin"
             android:layout_width="250dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
@@ -55,15 +57,15 @@
             android:paddingLeft="20dp"
             android:paddingRight="20dp"
             android:textAlignment="center"
+            android:inputType="textCapCharacters"
             android:textColor="@android:color/white"
             android:textColorHint="@drawable/selector"
-
             android:textSize="@dimen/slide_desc" />
 
     </LinearLayout>
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/btn_submit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/linearLayout"
