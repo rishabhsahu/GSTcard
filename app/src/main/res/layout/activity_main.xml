@@ -8,9 +8,10 @@
     <include layout="@layout/appbar"
         />
 
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         >
         <include
@@ -23,8 +24,12 @@
             android:layout_marginBottom="20dp"
             android:id="@+id/card"
             />
-        <include
-            layout="@layout/option_card"
-            />
-    </RelativeLayout>
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <include
+                layout="@layout/option_card"
+                />
+        </ScrollView>
+    </LinearLayout>
 </android.support.design.widget.CoordinatorLayout>

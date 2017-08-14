@@ -188,9 +188,14 @@ public class WelcomeActivity extends AppCompatActivity {
                         if (etGstin != null  && etCompany != null
                                 && !TextUtils.isEmpty(etGstin.getText())
                                 && !TextUtils.isEmpty(etCompany.getText())) {
-                            prefManager.setLogin(etGstin.getText().toString(),
-                                    etCompany.getText().toString());
-                            launchHomeScreen();
+                            String gstin = etGstin.getText().toString();
+                            if (gstin.matches("\\d{2}[A-Z]{5}\\d{4}[A-Z]{1}\\d[Z]{1}[A-Z\\d]{1}")) {
+
+                                prefManager.setLogin(gstin, etCompany.getText().toString());
+                                launchHomeScreen();
+                            } else {
+                                Toast.makeText(WelcomeActivity.this, "Re-check your gstin", Toast.LENGTH_SHORT).show();
+                            }
                         } else {
                             Toast.makeText(WelcomeActivity.this, "Enter fields first!", Toast.LENGTH_SHORT).show();
                         }

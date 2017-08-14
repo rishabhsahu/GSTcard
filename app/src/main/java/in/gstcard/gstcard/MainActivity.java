@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,6 +23,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
@@ -32,8 +38,14 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements PermissionListener{
+    private static String GST_NUMBER_KEY = "gst_number";
+    private static String COMPANY_NAME_KEY = "company_name";
+    private static String USER_NAME_KEY = "user_name";
+    private static String PHONE_NUMBER_KEY = "phone_number";
 
     private PrefManager localDatabase;
     private TextView tvUserName;
@@ -47,11 +59,40 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
     private String phoneNo = null, userName = null;
     private JSONObject gstCard;
     private PermissionUtils permissionUtils;
+    private DatabaseReference reference;
+    private Typeface avenirFont;
+    private ValueEventListener listener = new ValueEventListener() {
+        @Override
+        public void onDataChange(DataSnapshot dataSnapshot) {
+            if (dataSnapshot != null) {
+                String newsURL = dataSnapshot.child("news_url").getValue(String.class);
+                if (newsURL != null) {
+                    localDatabase.setNewsUrl(newsURL);
+                }
+                String extraTabText = dataSnapshot.child("extra_tab_text").getValue(String.class);
+                if (extraTabText != null) {
+                    localDatabase.setExtraTabText(extraTabText);
+                    ((TextView) findViewById(R.id.news_text))
+                            .setText(extraTabText);
+                }
+            }
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        avenirFont = Typeface.createFromAsset(getAssets(), "fonts/avenir.ttc");
+
         localDatabase = new PrefManager(this);
+
+        reference = FirebaseDatabase.getInstance().getReference()
+                .child("settings");
 
         permissionUtils = PermissionUtils.Companion.newInstance(this, this);
 
@@ -61,7 +102,6 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
         if (actionBar != null) {
             actionBar.setTitle("GST Card");
         }
-
 
         cardView = findViewById(R.id.card);
         leftCard = findViewById(R.id.left_card);
@@ -73,6 +113,14 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
 
         ivQrCode = findViewById(R.id.qr_code);
 
+
+        tvCompany.setTypeface(avenirFont, Typeface.NORMAL);
+        tvGstin.setTypeface(avenirFont, Typeface.NORMAL);
+        tvPhone.setTypeface(avenirFont, Typeface.NORMAL);
+        tvUserName.setTypeface(avenirFont, Typeface.NORMAL);
+
+        ((TextView)findViewById(R.id.news_text))
+                .setText(localDatabase.getExtraTabText());
 
         tvPhone.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -127,6 +175,18 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        reference.addValueEventListener(listener);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        reference.removeEventListener(listener);
+    }
+
+    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         permissionUtils.onRequestPermissionsRequest(requestCode, permissions, grantResults);
@@ -145,7 +205,7 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
                             || gstCard.optString(COMPANY_NAME_KEY, null) == null) {
                         throw new Exception();
                     } else {
-                        showGSTCard(gstCard);
+                        onScanResult(gstCard);
                     }
                 } catch (Exception e) {
                     Toast.makeText(this, "Scanned: " + result.getContents(), Toast.LENGTH_LONG).show();
@@ -156,13 +216,14 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
         }
     }
 
-    void showGSTCard(final JSONObject gstCard) {
-        String gsTin = gstCard.optString(GST_NUMBER_KEY);
+    void onScanResult(final JSONObject gstCard) {
+        final String gsTin = gstCard.optString(GST_NUMBER_KEY);
         String companyName = gstCard.optString(COMPANY_NAME_KEY);
         String userName = gstCard.optString(USER_NAME_KEY, null);
         String phoneNo = gstCard.optString(PHONE_NUMBER_KEY, null);
 
-        View root = getLayoutInflater().inflate(R.layout.card_gst, null);
+        View root = getLayoutInflater().inflate(R.layout.dialog_scan, null);
+
         View leftCard = root.findViewById(R.id.left_card);
 
         TextView tvCompany = root.findViewById(R.id.tv_company);
@@ -172,8 +233,15 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
 
         ImageView ivQrCode = root.findViewById(R.id.qr_code);
 
+        tvCompany.setTypeface(avenirFont, Typeface.NORMAL);
+        tvGstin.setTypeface(avenirFont, Typeface.NORMAL);
+        tvPhone.setTypeface(avenirFont, Typeface.NORMAL);
+        tvUserName.setTypeface(avenirFont, Typeface.NORMAL);
+
         tvCompany.setText(companyName);
         tvGstin.setText(gsTin);
+
+
 
         if (userName != null) {
             tvUserName.setText(userName);
@@ -182,10 +250,8 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
             tvPhone.setText(phoneNo);
             tvPhone.setTextColor(ContextCompat.getColor(this, android.R.color.black));
         } else {
-            tvPhone.setText(R.string.add_details);
             tvPhone.setTextColor(ContextCompat.getColor(this, R.color.blue));
         }
-
 
         ivQrCode.setImageBitmap(QRCode.from(gstCard.toString()).bitmap());
         leftCard.setOnClickListener(new View.OnClickListener() {
@@ -195,10 +261,42 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
             }
         });
 
-        new AlertDialog.Builder(this)
-                .setView(root).create().show();
+        scanedCardToDatabase(gsTin, companyName);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("QR code scan result").setView(root).create();
+        dialog.show();
+    }
 
+    void scanedCardToDatabase(final String gsTin, String companyName) {
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
 
+        Map<String, Object> updateChild = new HashMap<>();
+        final Map<String, Object> gstCardMap = new HashMap<>();
+        gstCardMap.put(GST_NUMBER_KEY, gsTin);
+        gstCardMap.put(COMPANY_NAME_KEY, companyName);
+        gstCardMap.put(USER_NAME_KEY, userName);
+        gstCardMap.put(PHONE_NUMBER_KEY, phoneNo);
+
+        updateChild.put("/gst_company_book/" + localDatabase.getGstin() + "/" + gsTin, gstCardMap);
+        updateChild.put("/gst_company_book/" + gsTin + "/" + localDatabase.getGstin(), getUserMap());
+
+        ref.updateChildren(updateChild);
+
+        ref.child("registered").child(gsTin).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (!dataSnapshot.exists()) {
+                    Map<String, Object> updateChild = new HashMap<>();
+                    updateChild.put("/registered/" + gsTin, gstCardMap);
+                    ref.updateChildren(updateChild);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     void updateCardData() {
@@ -223,13 +321,13 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
 
         gstCard = new JSONObject();
         try {
-            gstCard.put("gst_number", gsTin);
-            gstCard.put("company_name", companyName);
+            gstCard.put(GST_NUMBER_KEY, gsTin);
+            gstCard.put(COMPANY_NAME_KEY, companyName);
             if(userName != null) {
-                gstCard.put("user_name", userName);
+                gstCard.put(USER_NAME_KEY, userName);
             }
             if (phoneNo != null) {
-                gstCard.put("phone_number", phoneNo);
+                gstCard.put(PHONE_NUMBER_KEY, phoneNo);
             }
             ivQrCode.setImageBitmap(QRCode.from(gstCard.toString()).bitmap());
             leftCard.setOnClickListener(new View.OnClickListener() {
@@ -242,11 +340,6 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
             e.printStackTrace();
         }
     }
-
-    private static String GST_NUMBER_KEY = "gst_number";
-    private static String COMPANY_NAME_KEY = "company_name";
-    private static String USER_NAME_KEY = "user_name";
-    private static String PHONE_NUMBER_KEY = "phone_number";
 
     void addDetailDialog() {
         View root = getLayoutInflater().inflate(R.layout.dialog_detail, null);
@@ -291,8 +384,9 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
 
     void shareCard() {
         Bitmap bitmap = getBitmapFromView(cardView);
-        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)+"/Share.png";
-        OutputStream out = null;
+        String path = Environment
+                .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)+"/ShareCard.png";
+        OutputStream out;
         File file=new File(path);
         try {
             out = new FileOutputStream(file);
@@ -313,8 +407,8 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
                 "Company Name : " + gstCard.optString(COMPANY_NAME_KEY) + "\n" +
                 "Name : " + gstCard.optString(USER_NAME_KEY) + "\n" +
                 "Phone Number : " + gstCard.optString(PHONE_NUMBER_KEY) + "\n" +
-                        "View this GST card at " + "https://www.gstcard.com"
-        );
+                "View this GST card at " + "https://www.gstcard.in");
+
         shareIntent.putExtra(Intent.EXTRA_STREAM, bmpUri);
         shareIntent.setType("*/*");
         shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -322,10 +416,9 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
     }
 
     void openNews() {
-        String url = "http://www.gstindia.com/about/";
-        Intent i = new Intent(Intent.ACTION_VIEW);
-        i.setData(Uri.parse(url));
-        startActivity(i);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(localDatabase.getNewsUrl()));
+        startActivity(intent);
     }
 
     void scanQRCode() {
@@ -353,6 +446,19 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
                 .create().show();
     }
 
+    Map<String, Object> getUserMap() {
+        String gsTin = localDatabase.getGstin();
+        String companyName = localDatabase.getCompanyName();
+        String userName = localDatabase.getUserName();
+        String phoneNo = localDatabase.getPhoneNo();
+        Map<String, Object> myCard = new HashMap<>();
+        myCard.put(GST_NUMBER_KEY, gsTin);
+        myCard.put(COMPANY_NAME_KEY, companyName);
+        myCard.put(USER_NAME_KEY, userName);
+        myCard.put(PHONE_NUMBER_KEY, phoneNo);
+        return myCard;
+    }
+
 
     void onClickViews(View.OnClickListener listener, int... layouts) {
         for (int layout: layouts) {
@@ -362,17 +468,19 @@ public class MainActivity extends AppCompatActivity implements PermissionListene
 
     public static Bitmap getBitmapFromView(View view) {
         //Define a bitmap with the same size as the view
-        Bitmap returnedBitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(),Bitmap.Config.ARGB_8888);
+        Bitmap returnedBitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(),
+                Bitmap.Config.ARGB_8888);
         //Bind a canvas to it
         Canvas canvas = new Canvas(returnedBitmap);
         //Get the view's background
         Drawable bgDrawable =view.getBackground();
-        if (bgDrawable!=null)
+        if (bgDrawable != null) {
             //has background drawable, then draw it on the canvas
             bgDrawable.draw(canvas);
-        else
+        } else {
             //does not have background drawable, then draw white background on the canvas
             canvas.drawColor(Color.WHITE);
+        }
         // draw the view on the canvas
         view.draw(canvas);
         //return the bitmap

@@ -92,7 +92,7 @@
         android:layout_toEndOf="@+id/view_icon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="View GST Number Book"
+        android:text="GST Number Book"
         android:textSize="20sp"
         android:textColor="#000"
         android:layout_alignBottom="@+id/view_icon"
